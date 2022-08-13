@@ -1,24 +1,109 @@
-import { Ctx, Hears, InjectBot, Start, Update } from 'nestjs-telegraf'
-import { Context, Telegraf } from 'telegraf'
-import { actionButtons } from './bot.buttons'
+import {
+  Action,
+  Ctx,
+  Hears,
+  InjectBot,
+  Message,
+  On,
+  Start,
+  Update,
+} from 'nestjs-telegraf'
+import { Telegraf } from 'telegraf'
+import { actionButtons, cancelButton, mainButtons } from './bot.buttons'
+import { buttons } from './constants/buttons'
+import { Context } from './interfaces/bot.session'
+import { NotionMyService } from '../notion/notion.MyService'
+import { isAllowAccess } from '../utils'
 
 @Update()
 export class BotUpdate {
-  constructor(@InjectBot() private readonly bot: Telegraf<Context>) {}
+  constructor(
+    @InjectBot() private readonly bot: Telegraf<Context>,
+    private readonly myNotionServices: NotionMyService,
+  ) {}
 
   @Start()
   async startCommand(@Ctx() ctx: Context) {
-    await ctx.reply(`Привет ${ctx.message.from.first_name}`)
-    await ctx.reply(`Что хотите сделать?`, actionButtons())
+    ctx.session.type = null
+    if (!isAllowAccess(ctx)) {
+      await ctx.reply('❌❌❌ У вас нет доступа! ❌❌❌')
+      return
+    }
+    await ctx.reply(`Привет ${ctx.message.from.first_name}`, mainButtons())
   }
 
-  @Hears('📌 Создать задачу')
+  @Hears(buttons.HOME_BUTTON)
   async createTask(@Ctx() ctx: Context) {
-    await ctx.reply('Тут мы будем создавать Задачу(в разработке)')
+    ctx.session.type = 'home'
+    await ctx.replyWithHTML('⬇ Что будем делать❓', actionButtons())
   }
 
-  @Hears('📋 Создать заметку')
+  @Hears(buttons.WORK_BUTTON)
   async createPin(@Ctx() ctx: Context) {
-    await ctx.reply('Тут мы будем создавать заметку(в разработке)')
+    ctx.session.type = 'work'
+    await ctx.replyWithHTML('⬇ Что будем делать❓', actionButtons())
+  }
+
+  @Hears(buttons.CANCEL_BUTTON)
+  async handleCancel(@Ctx() ctx: Context) {
+    ctx.session.type = null
+    ctx.session.itemType = null
+    await ctx.replyWithHTML('Создание отменено', mainButtons())
+  }
+
+  @Action('createTask')
+  async onCreateTask(@Message('text') text, @Ctx() ctx: Context) {
+    ctx.session.itemType = 'task'
+    await ctx.reply('Введите текст задачи', cancelButton())
+    await ctx.answerCbQuery()
+  }
+
+  @Action('createPin')
+  async onCreatePin(@Message('text') text, @Ctx() ctx: Context) {
+    ctx.session.itemType = 'pin'
+    await ctx.reply(`Введите текст заметки`, cancelButton())
+    await ctx.answerCbQuery()
+  }
+
+  @On('message')
+  async onMessage(@Message('text') text, @Ctx() ctx: Context) {
+    if (!ctx.session.type) {
+      await this.myNotionServices.createInboxPin(ctx, { text })
+    }
+
+    if (ctx.session.type === 'work') {
+      switch (ctx.session.itemType) {
+        case 'task':
+          await this.myNotionServices.createWorkTask(ctx, { text })
+          break
+        case 'pin':
+          await this.myNotionServices.createPin(ctx, {
+            text,
+            block_id: process.env.NOTION_WORK_PIN_PAGE,
+          })
+          break
+        default:
+          ctx.reply('Нет такого типа!!')
+      }
+    }
+
+    if (ctx.session.type === 'home') {
+      switch (ctx.session.itemType) {
+        case 'task':
+          await this.myNotionServices.createHomeTask(ctx, { text })
+          break
+        case 'pin':
+          await this.myNotionServices.createPin(ctx, {
+            text,
+            block_id: process.env.NOTION_HOME_PIN_PAGE,
+          })
+          break
+        default:
+          ctx.reply('Нет такого типа!!')
+      }
+    }
+
+    ctx.session.type = null
+    ctx.session.itemType = null
   }
 }
