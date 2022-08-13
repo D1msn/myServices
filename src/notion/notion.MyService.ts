@@ -19,7 +19,7 @@ export class NotionMyService {
       return
     }
     try {
-      const page = await this.notion.pages.create(parameters)
+      const page = await this.notion.notion.pages.create(parameters)
       if (isFullPage(page)) {
         await ctx.reply(
           `✅ Запись [${ctx.message.text}](${page.url}) создана`,
@@ -111,7 +111,7 @@ export class NotionMyService {
     const messageDate = formatDate(ctx.message.date)
 
     try {
-      await this.notion.blocks.children.append({
+      await this.notion.notion.blocks.children.append({
         block_id,
         children: [
           {

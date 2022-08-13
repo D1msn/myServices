@@ -20,20 +20,12 @@ export class NotionService {
     this._notion = new Client(this.notionModuleOptions)
   }
 
-  private get notion() {
+  public get notion() {
     return this._notion
-  }
-
-  public get blocks() {
-    return this.notion.blocks
   }
 
   public get databases() {
     return this.notion.databases
-  }
-
-  public get pages() {
-    return this.notion.pages
   }
 
   public request<Response>(
