@@ -21,14 +21,11 @@ export class NotionMyService {
     try {
       const page = await this.notion.notion.pages.create(parameters)
       if (isFullPage(page)) {
-        await ctx.reply(
-          `✅ Запись [${ctx.message.text}](${page.url}) создана`,
+        const text = ctx.session.type
+          ? `✅ Запись <a href="${page.url}">${ctx.message.text}</a> добавлена`
+          : `✅ Запись <a href="${page.url}">${ctx.message.text}</a> добавлена <b>в Inbox</b>`
 
-          {
-            parse_mode: 'Markdown',
-            ...mainButtons(),
-          },
-        )
+        await ctx.replyWithHTML(text, mainButtons())
       }
     } catch (error: unknown) {
       await ctx.reply(notionErrorHandler(error))

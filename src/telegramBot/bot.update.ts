@@ -15,6 +15,7 @@ import { buttons } from './constants/buttons'
 import { Context } from './interfaces/bot.session'
 import { NotionMyService } from '../notion/notion.MyService'
 import { isAllowAccess } from '../utils'
+import { getCancelButtonMessage } from './utils'
 
 @Update()
 export class BotUpdate {
@@ -53,9 +54,9 @@ export class BotUpdate {
 
   @Hears(buttons.CANCEL_BUTTON)
   async handleCancel(@Ctx() ctx: Context) {
+    await ctx.replyWithHTML(getCancelButtonMessage(ctx), mainButtons())
     ctx.session.type = null
     ctx.session.itemType = null
-    await ctx.replyWithHTML('Создание отменено', mainButtons())
   }
 
   @Action('createTask')
