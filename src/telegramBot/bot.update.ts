@@ -7,6 +7,7 @@ import {
   On,
   Start,
   Update,
+  Use,
 } from 'nestjs-telegraf'
 import { Telegraf } from 'telegraf'
 import { actionButtons, cancelButton, mainButtons } from './bot.buttons'
@@ -25,11 +26,17 @@ export class BotUpdate {
   @Start()
   async startCommand(@Ctx() ctx: Context) {
     ctx.session.type = null
+    ctx.session.itemType = null
+    await ctx.reply(`Привет ${ctx.message.from.first_name}`, mainButtons())
+  }
+
+  @Use()
+  async checkAccess(ctx: Context, next) {
     if (!isAllowAccess(ctx)) {
       await ctx.reply('❌❌❌ У вас нет доступа! ❌❌❌')
       return
     }
-    await ctx.reply(`Привет ${ctx.message.from.first_name}`, mainButtons())
+    next()
   }
 
   @Hears(buttons.HOME_BUTTON)
@@ -53,16 +60,18 @@ export class BotUpdate {
 
   @Action('createTask')
   async onCreateTask(@Message('text') text, @Ctx() ctx: Context) {
-    ctx.session.itemType = 'task'
-    await ctx.reply('Введите текст задачи', cancelButton())
     await ctx.answerCbQuery()
+    ctx.session.itemType = 'task'
+    await ctx.deleteMessage()
+    await ctx.reply('Введите текст задачи', cancelButton())
   }
 
   @Action('createPin')
   async onCreatePin(@Message('text') text, @Ctx() ctx: Context) {
-    ctx.session.itemType = 'pin'
-    await ctx.reply(`Введите текст заметки`, cancelButton())
     await ctx.answerCbQuery()
+    ctx.session.itemType = 'pin'
+    await ctx.deleteMessage()
+    await ctx.reply(`Введите текст заметки`, cancelButton())
   }
 
   @On('message')
