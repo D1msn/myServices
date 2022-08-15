@@ -5,3 +5,8 @@ export const enum buttons {
   CREATE_TASK_BUTTON = '📋 Создать задачу',
   CANCEL_BUTTON = '❌ Отменить',
 }
+
+export const enum buttonsActions {
+  CREATE_TASK = 'CREATE_TASK',
+  CREATE_PIN = 'CREATE_PIN',
+}

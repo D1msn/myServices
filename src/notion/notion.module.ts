@@ -1,11 +1,12 @@
-import { DynamicModule, Module } from '@nestjs/common'
-import { NotionService } from './notion.service'
+import { DynamicModule, Global, Module } from '@nestjs/common'
+import { NotionMainService } from './notion.main.service'
 import { ClientOptions } from '@notionhq/client/build/src/Client'
+import { NotionMyService } from './notion.myService'
 
+@Global()
 @Module({
-  imports: [],
-  providers: [NotionService],
-  exports: [NotionService],
+  providers: [NotionMainService, NotionMyService],
+  exports: [NotionMainService, NotionMyService],
 })
 export class NotionModule {
   static forRoot(options: ClientOptions): DynamicModule {
@@ -17,6 +18,7 @@ export class NotionModule {
           useValue: options,
         },
       ],
+      exports: [NotionMyService],
     }
   }
 }

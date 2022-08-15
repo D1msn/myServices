@@ -2,10 +2,9 @@ import { Module } from '@nestjs/common'
 import * as LocalSession from 'telegraf-session-local'
 import { TelegrafModule } from 'nestjs-telegraf'
 import { ConfigModule } from '@nestjs/config'
-import { BotUpdate } from './telegramBot/bot.update'
 import { NotionModule } from './notion/notion.module'
 import { LogLevel } from '@notionhq/client'
-import { NotionMyService } from './notion/notion.MyService'
+import { BotModule } from './telegramBot/bot.module'
 
 const sessions = new LocalSession({ database: 'session_db.json' })
 
@@ -22,8 +21,7 @@ const sessions = new LocalSession({ database: 'session_db.json' })
       auth: process.env.NOTION_TOKEN,
       logLevel: LogLevel.DEBUG,
     }),
+    BotModule,
   ],
-  controllers: [],
-  providers: [BotUpdate, NotionMyService],
 })
 export class AppModule {}
