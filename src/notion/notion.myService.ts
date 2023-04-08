@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common'
 import { NotionMainService } from './notion.main.service'
 import { Context } from '../telegramBot'
+import { getSplitText } from './utils/notion.text'
 
 @Injectable()
 export class NotionMyService {
   constructor(private readonly notionService: NotionMainService) {}
 
   public async createInboxPin(ctx: Context, { text }: { text: string }) {
+    const splitText = getSplitText(text)
+
     await this.notionService.createPage(ctx, {
       parent: {
         database_id: process.env.NOTION_INBOX_DB,
@@ -16,12 +19,25 @@ export class NotionMyService {
           title: [
             {
               text: {
-                content: text,
+                content: splitText.title,
               },
             },
           ],
         },
       },
+      children: [
+        {
+          paragraph: {
+            rich_text: [
+              {
+                text: {
+                  content: splitText.body,
+                },
+              },
+            ],
+          },
+        },
+      ],
     })
   }
 

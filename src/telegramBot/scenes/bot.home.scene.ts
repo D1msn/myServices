@@ -13,6 +13,7 @@ import { scenes } from '../constants/scenes'
 import { buttons, buttonsActions } from '../constants/buttons'
 import { NotionMyService } from '../../notion/notion.myService'
 import { getCancelButtonMessage } from '../utils'
+import { APP_CONFIG } from '../../app.config'
 
 @Scene(scenes.HOME_SCENE)
 export class HomeScene {
@@ -36,14 +37,17 @@ export class HomeScene {
     ctx.scene.session.state.itemType = 'pin'
     await ctx.answerCbQuery()
     await ctx.deleteMessage()
-    await ctx.reply(`Введите текст заметки`, cancelButton())
+    await ctx.reply(
+      `Введите текст заметки (В начале укажите заголовок, а после "${APP_CONFIG.titleNotionSeparator}" тело заметки`,
+      cancelButton(),
+    )
   }
 
   @Hears(buttons.CANCEL_BUTTON)
   async handleCancel(@Ctx() ctx: Context) {
     ctx.scene.session.state.type = 'home'
     await ctx.replyWithHTML(getCancelButtonMessage(ctx), mainButtons())
-    ctx.scene.leave()
+    await ctx.scene.leave()
   }
 
   @On('text')

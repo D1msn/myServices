@@ -6,6 +6,7 @@ import { CreatePageParameters } from '@notionhq/client/build/src/api-endpoints'
 import { mainButtons } from '../telegramBot/utils/buttons'
 import { notionErrorHandler } from './utils/notion.errorHandler'
 import { formatDate } from '../utils'
+import { getSplitText } from './utils/notion.text'
 
 @Injectable()
 export class NotionMainService {
@@ -39,6 +40,7 @@ export class NotionMainService {
     { text, block_id }: { text: string; block_id: string },
   ) {
     const messageDate = formatDate(ctx.message.date)
+    const splitText = getSplitText(text)
 
     try {
       await this.notion.blocks.children.append({
@@ -50,7 +52,20 @@ export class NotionMainService {
               rich_text: [
                 {
                   text: {
-                    content: `${text} (дата создания: ${messageDate})`,
+                    content: `${splitText.title} (дата создания: ${messageDate})`,
+                  },
+                },
+              ],
+              children: [
+                {
+                  paragraph: {
+                    rich_text: [
+                      {
+                        text: {
+                          content: splitText.body,
+                        },
+                      },
+                    ],
                   },
                 },
               ],
@@ -59,7 +74,7 @@ export class NotionMainService {
         ],
       })
       await ctx.replyWithHTML(
-        `✅ Заметка <a href='${process.env.MY_NOTION_LINK}/${block_id}'>${text}</a> создана`,
+        `✅ Заметка <a href='${process.env.MY_NOTION_LINK}/${block_id}'>${splitText.title}</a> создана`,
         mainButtons(),
       )
     } catch (error: unknown) {
